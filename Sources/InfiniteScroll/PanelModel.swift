@@ -14,12 +14,16 @@ class CellModel: ObservableObject, Identifiable {
     @Published var cwd: String
     @Published var text: String
     @Published var isRunning: Bool = true
+    /// Proportional width weight for split-pane resizing (default 1.0 = equal share).
+    @Published var widthFraction: CGFloat = 1.0
 
-    init(type: CellType, id: UUID = UUID(), cwd: String? = nil, text: String = "") {
+    init(type: CellType, id: UUID = UUID(), cwd: String? = nil, text: String = "",
+         widthFraction: CGFloat = 1.0) {
         self.id = id
         self.type = type
         self.cwd = cwd ?? NSHomeDirectory()
         self.text = text
+        self.widthFraction = widthFraction
     }
 }
 
@@ -73,6 +77,7 @@ struct CellState: Codable {
     let type: CellType
     let cwd: String?
     let text: String?
+    let widthFraction: CGFloat?
 }
 
 struct PanelState: Codable {
@@ -92,7 +97,8 @@ extension CellModel {
             id: id.uuidString,
             type: type,
             cwd: type == .terminal ? cwd : nil,
-            text: (type == .notes || type == .excalidraw) ? text : nil
+            text: (type == .notes || type == .excalidraw) ? text : nil,
+            widthFraction: widthFraction
         )
     }
 
@@ -101,7 +107,8 @@ extension CellModel {
             type: state.type,
             id: UUID(uuidString: state.id) ?? UUID(),
             cwd: state.cwd,
-            text: state.text ?? ""
+            text: state.text ?? "",
+            widthFraction: state.widthFraction ?? 1.0
         )
     }
 }
