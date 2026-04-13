@@ -11,7 +11,10 @@ let package = Package(
         .executableTarget(
             name: "InfiniteScroll",
             dependencies: ["SwiftTerm"],
-            path: "Sources/InfiniteScroll"
+            path: "Sources/InfiniteScroll",
+            resources: [
+                .copy("Resources"),
+            ]
         ),
     ]
 )

@@ -24,9 +24,25 @@ struct ExcalidrawView: NSViewRepresentable {
         ExcalidrawViewRegistry.shared.register(id: excalidrawID, view: webView)
 
         let html = Self.buildHTML(initialData: text)
-        webView.loadHTMLString(html, baseURL: nil)
+        // Load with the Excalidraw resources dir as baseURL so relative <script src>
+        // tags resolve to the vendored UMD bundles. Granting read access to that dir
+        // also lets WKWebView fetch them without tripping the file:// same-origin rules.
+        let resourcesDir = Self.excalidrawResourcesURL()
+        webView.loadHTMLString(html, baseURL: resourcesDir)
 
         return webView
+    }
+
+    /// URL of the directory containing vendored Excalidraw/React UMD bundles.
+    /// Uses `Bundle.module` (SwiftPM-generated) so it works both in `swift run`
+    /// and inside a packaged `.app`.
+    static func excalidrawResourcesURL() -> URL {
+        if let url = Bundle.module.url(forResource: "Excalidraw", withExtension: nil) {
+            return url
+        }
+        // Fallback: bundle root. Should not hit this in practice — if it does,
+        // the script tags will 404 and the WebView will show its default blank page.
+        return Bundle.module.bundleURL
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
@@ -119,9 +135,15 @@ struct ExcalidrawView: NSViewRepresentable {
         </head>
         <body>
         <div id="root"></div>
-        <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-        <script src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.production.min.js"></script>
+        <script>
+          // Point Excalidraw at our vendored fonts, vendor chunk, and locales.
+          // Without this it falls back to https://unpkg.com/@excalidraw/excalidraw@.../dist/
+          // at runtime and silently re-introduces the network dependency.
+          window.EXCALIDRAW_ASSET_PATH = './excalidraw-assets/';
+        </script>
+        <script src="react.production.min.js"></script>
+        <script src="react-dom.production.min.js"></script>
+        <script src="excalidraw.production.min.js"></script>
         <script>
         (function() {
           const initialDataJSON = `\(escapedData)`;
