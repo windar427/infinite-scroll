@@ -20,6 +20,18 @@ cp ".build/release/$BUNDLE_NAME" "$APP_NAME.app/Contents/MacOS/$BUNDLE_NAME"
 # Copy app icon
 cp "Resources/AppIcon.icns" "$APP_NAME.app/Contents/Resources/AppIcon.icns"
 
+# Copy SwiftPM-generated resource bundle (vendored Excalidraw/React UMD assets).
+# Bundle.module resolves this via Bundle.main.bundleURL, so it must land at
+# Contents/Resources/<Target>_<Target>.bundle inside the .app.
+RESOURCE_BUNDLE=".build/release/${BUNDLE_NAME}_${BUNDLE_NAME}.bundle"
+if [ -d "$RESOURCE_BUNDLE" ]; then
+    echo "=== Copying resource bundle ==="
+    cp -R "$RESOURCE_BUNDLE" "$APP_NAME.app/Contents/Resources/"
+else
+    echo "ERROR: resource bundle not found at $RESOURCE_BUNDLE — Excalidraw will not work" >&2
+    exit 1
+fi
+
 # Bundle tmux
 TMUX_BIN="$(readlink -f /opt/homebrew/bin/tmux 2>/dev/null || readlink -f /usr/local/bin/tmux 2>/dev/null || echo "")"
 if [ -z "$TMUX_BIN" ]; then
