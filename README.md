@@ -9,6 +9,8 @@ A terminal workspace manager for macOS. Organize multiple terminals in an infini
 - Keyboard-driven navigation (`Cmd+Arrows`)
 - Tmux-backed session persistence
 - Inline markdown notes per row
+- Excalidraw whiteboard cells (`Cmd+Shift+E`)
+- Resizable cell dividers (drag to adjust width)
 - Auto-saved workspace state
 
 ## Requirements
@@ -32,6 +34,7 @@ swift build
 | ----------------- | ------------------ |
 | `Cmd+Shift+Down`  | New row            |
 | `Cmd+D`           | Duplicate cell     |
+| `Cmd+Shift+E`     | New Excalidraw cell|
 | `Cmd+W`           | Close cell         |
 | `Cmd+Arrows`      | Navigate panels    |
 | `Cmd+Scroll`      | Scroll rows        |
