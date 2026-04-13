@@ -152,6 +152,14 @@ enum TmuxManager {
         run(["set-option", "-g", "extended-keys-format", "csi-u"])
         // Propagate TERM_PROGRAM into sessions on (re)attach
         run(["set-option", "-g", "update-environment", "TERM_PROGRAM"])
+        // Resize performance: only resize to active client (skips cross-client
+        // minimum + redundant full redraws) — fixes multi-second resize lag.
+        run(["set-window-option", "-g", "aggressive-resize", "on"])
+        // App has its own header bar; tmux status bar would just compete for
+        // redraws on every resize.
+        run(["set-option", "-g", "status", "off"])
+        // Eliminate input lag from escape-sequence detection.
+        run(["set-option", "-g", "escape-time", "0"])
     }
 
     /// Send literal keys into a tmux pane, bypassing tmux's input parsing.

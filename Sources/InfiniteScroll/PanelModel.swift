@@ -36,13 +36,15 @@ class PanelModel: ObservableObject, Identifiable {
     /// Persisted notes content — survives toggling notes off/on.
     @Published var notesText: String
     @Published var showNotes: Bool
+    @Published var height: CGFloat = 750
 
     init(index: Int, id: UUID = UUID(), cells: [CellModel]? = nil,
-         notesText: String = "", showNotes: Bool = false) {
+         notesText: String = "", showNotes: Bool = false, height: CGFloat = 750) {
         self.id = id
         self.title = "Row #\(index)"
         self.notesText = notesText
         self.showNotes = showNotes
+        self.height = height
         if let cells = cells {
             self.cells = cells
         } else {
@@ -86,6 +88,7 @@ struct PanelState: Codable {
     let cells: [CellState]?
     let notesText: String?
     let showNotes: Bool?
+    let height: CGFloat?
     // Backward compat
     let cwd: String?
     let notes: String?
@@ -128,6 +131,7 @@ extension PanelModel {
             cells: cells.map { $0.toState() },
             notesText: currentNotesText,
             showNotes: showNotes,
+            height: height,
             cwd: nil,
             notes: nil
         )
@@ -150,7 +154,8 @@ extension PanelModel {
             id: UUID(uuidString: state.id) ?? UUID(),
             cells: cells,
             notesText: state.notesText ?? state.notes ?? "",
-            showNotes: state.showNotes ?? false
+            showNotes: state.showNotes ?? false,
+            height: state.height ?? 750
         )
         model.title = state.title
         return model
