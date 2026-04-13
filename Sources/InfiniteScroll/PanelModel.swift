@@ -5,6 +5,7 @@ import Foundation
 enum CellType: String, Codable {
     case terminal
     case notes
+    case excalidraw
 }
 
 class CellModel: ObservableObject, Identifiable {
@@ -91,7 +92,7 @@ extension CellModel {
             id: id.uuidString,
             type: type,
             cwd: type == .terminal ? cwd : nil,
-            text: type == .notes ? text : nil
+            text: (type == .notes || type == .excalidraw) ? text : nil
         )
     }
 
@@ -129,6 +130,7 @@ extension PanelModel {
         let cells: [CellModel]
         if let cellStates = state.cells, !cellStates.isEmpty {
             // Filter out notes cells from persisted state — toggleNotes() will re-add if needed
+            // Excalidraw cells are restored directly
             cells = cellStates.compactMap { cellState in
                 cellState.type == .notes ? nil : CellModel.from(state: cellState)
             }

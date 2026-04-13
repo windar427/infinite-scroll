@@ -119,6 +119,12 @@ struct CellView: View {
                 text: $cell.text,
                 fontSize: fontSize
             )
+        case .excalidraw:
+            ExcalidrawView(
+                excalidrawID: cell.id,
+                text: $cell.text,
+                fontSize: fontSize
+            )
         }
     }
 }

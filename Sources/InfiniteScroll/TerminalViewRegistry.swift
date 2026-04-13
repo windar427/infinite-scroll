@@ -50,7 +50,7 @@ class TerminalViewRegistry {
 }
 
 /// Scroll the entire row (including header) into the viewport
-private func scrollRowToVisible(_ view: NSView) {
+func scrollRowToVisible(_ view: NSView) {
     var current: NSView? = view.superview
     while let parent = current {
         if let scrollView = parent as? CmdNSScrollView {

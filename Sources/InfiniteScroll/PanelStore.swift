@@ -109,6 +109,14 @@ class PanelStore: ObservableObject {
                             return
                         }
                     }
+                case .excalidraw:
+                    if let webView = ExcalidrawViewRegistry.shared.view(for: cell.id),
+                       responder === webView || responder.isDescendant(of: webView) {
+                        focusedRow = rowIdx
+                        focusedCell = cellIdx
+                        focusedCellID = cell.id
+                        return
+                    }
                 }
             }
         }
@@ -212,6 +220,24 @@ class PanelStore: ObservableObject {
         scheduleFocus()
     }
 
+    func addExcalidrawCell() {
+        syncFocusFromFirstResponder()
+        guard focusedRow < panels.count else { return }
+        let panel = panels[focusedRow]
+        let newCell = CellModel(type: .excalidraw)
+        // Insert after the focused cell, but before notes (keep notes rightmost)
+        let insertIdx: Int
+        if let notesIdx = panel.cells.firstIndex(where: { $0.type == .notes }) {
+            insertIdx = notesIdx
+        } else {
+            insertIdx = min(focusedCell + 1, panel.cells.count)
+        }
+        panel.cells.insert(newCell, at: insertIdx)
+        focusedCell = insertIdx
+        objectWillChange.send()
+        scheduleFocus()
+    }
+
     // MARK: - Zoom
 
     func zoomIn() {
@@ -281,6 +307,8 @@ class PanelStore: ObservableObject {
             TerminalViewRegistry.shared.focus(id: cell.id)
         case .notes:
             NotesViewRegistry.shared.focus(id: cell.id)
+        case .excalidraw:
+            ExcalidrawViewRegistry.shared.focus(id: cell.id)
         }
     }
 
