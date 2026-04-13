@@ -1,9 +1,11 @@
 import SwiftUI
+import AppKit
 
 struct RowView: View {
     @ObservedObject var panel: PanelModel
     let index: Int
     let fontSize: CGFloat
+    let height: CGFloat
     let focusedCellID: UUID?
     let onClose: () -> Void
 
@@ -77,9 +79,9 @@ struct RowView: View {
                     }
                 }
             }
-            .frame(height: Theme.panelHeight - Theme.headerHeight)
+            .frame(height: height - Theme.headerHeight)
         }
-        .frame(height: Theme.panelHeight)
+        .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: Theme.panelCornerRadius))
         .overlay(
             RoundedRectangle(cornerRadius: Theme.panelCornerRadius)
@@ -120,28 +122,36 @@ struct ResizableDivider: View {
     let totalFractions: CGFloat
 
     /// Total visible+hit width of the divider.
-    static let hitAreaWidth: CGFloat = 8
+    static let hitAreaWidth: CGFloat = 16
     /// Minimum pixel width a cell can be dragged to.
     private static let minCellWidth: CGFloat = 100
 
     @State private var isHovering = false
-    /// Snapshot of left/right fractions at drag start, so cumulative translation works correctly.
-    @State private var dragStartLeft: CGFloat = 0
-    @State private var dragStartRight: CGFloat = 0
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
 
     var body: some View {
         ZStack {
-            // Invisible wide hit area
             Color.clear
                 .frame(width: Self.hitAreaWidth)
                 .contentShape(Rectangle())
 
-            // Visible 1px line
             Rectangle()
-                .fill(isHovering ? Theme.focusBorder : Theme.border)
-                .frame(width: 1)
+                .fill(isHovering || isDragging ? Theme.focusBorder : Theme.border)
+                .frame(width: isDragging ? 4 : 1)
+
+            VStack(spacing: 3) {
+                ForEach(0..<3) { _ in
+                    Circle()
+                        .fill(isHovering || isDragging ? Theme.focusBorder : Theme.textSecondary)
+                        .frame(width: isDragging ? 5 : 3, height: isDragging ? 5 : 3)
+                }
+            }
         }
         .frame(width: Self.hitAreaWidth)
+        .offset(x: isDragging ? dragOffset : 0)
+        .allowsHitTesting(true)
+        .zIndex(1)
         .onHover { hovering in
             isHovering = hovering
             if hovering {
@@ -153,32 +163,22 @@ struct ResizableDivider: View {
         .gesture(
             DragGesture(minimumDistance: 1)
                 .onChanged { value in
-                    // On first drag event, snapshot the initial fractions
-                    if dragStartLeft == 0 && dragStartRight == 0 {
-                        dragStartLeft = leftCell.widthFraction
-                        dragStartRight = rightCell.widthFraction
-                    }
-
-                    guard totalFractions > 0, availableWidth > 0 else { return }
-
-                    let fractionPerPoint = totalFractions / availableWidth
-                    let deltaFraction = value.translation.width * fractionPerPoint
-
-                    // Compute proposed fractions from the drag-start snapshot
-                    let proposedLeft = dragStartLeft + deltaFraction
-                    let proposedRight = dragStartRight - deltaFraction
-
-                    // Convert minimum width to minimum fraction
-                    let minFraction = Self.minCellWidth * fractionPerPoint
-
-                    guard proposedLeft >= minFraction, proposedRight >= minFraction else { return }
-
-                    leftCell.widthFraction = proposedLeft
-                    rightCell.widthFraction = proposedRight
+                    isDragging = true
+                    dragOffset = value.translation.width
                 }
                 .onEnded { _ in
-                    dragStartLeft = 0
-                    dragStartRight = 0
+                    if totalFractions > 0, availableWidth > 0 {
+                        let fractionPerPoint = totalFractions / availableWidth
+                        let minFraction = Self.minCellWidth * fractionPerPoint
+                        let maxLeftDelta = (rightCell.widthFraction - minFraction) / fractionPerPoint
+                        let maxRightDelta = (leftCell.widthFraction - minFraction) / fractionPerPoint
+                        let clamped = max(-maxRightDelta, min(maxLeftDelta, dragOffset))
+                        let deltaFraction = clamped * fractionPerPoint
+                        leftCell.widthFraction += deltaFraction
+                        rightCell.widthFraction -= deltaFraction
+                    }
+                    dragOffset = 0
+                    isDragging = false
                 }
         )
     }

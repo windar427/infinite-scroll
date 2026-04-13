@@ -83,6 +83,32 @@ enum CmdBackspaceMonitor {
 
 // MARK: - TerminalWrapper
 
+// MARK: - Throttled terminal view
+//
+// During AppKit window-edge live resize, AppKit fires setFrameSize on every
+// 1px tick. Each call would otherwise trigger SwiftTerm's processSizeChange
+// → Buffer.reflow → SIGWINCH → tmux redraw — a storm that locks the UI for
+// seconds on a single drag. We skip intermediate ticks within 50ms and apply
+// the final settled size in viewDidEndLiveResize.
+class ThrottledTerminalView: LocalProcessTerminalView {
+    private var lastTerminalResizeAt: CFAbsoluteTime = 0
+
+    override func setFrameSize(_ newSize: NSSize) {
+        let now = CFAbsoluteTimeGetCurrent()
+        if inLiveResize && (now - lastTerminalResizeAt) < 0.05 {
+            return
+        }
+        lastTerminalResizeAt = now
+        super.setFrameSize(newSize)
+    }
+
+    override func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        lastTerminalResizeAt = 0
+        super.setFrameSize(frame.size)
+    }
+}
+
 struct TerminalWrapper: NSViewRepresentable {
     let terminalID: UUID
     let initialDirectory: String
@@ -91,7 +117,7 @@ struct TerminalWrapper: NSViewRepresentable {
     let onCwdChange: (String) -> Void
 
     func makeNSView(context: Context) -> LocalProcessTerminalView {
-        let termView = LocalProcessTerminalView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let termView = ThrottledTerminalView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         // Disable SwiftTerm's mouse reporting so click+drag does text selection.
         // Scroll events are forwarded to tmux separately via CmdScrollView.
         termView.allowMouseReporting = false
@@ -104,6 +130,11 @@ struct TerminalWrapper: NSViewRepresentable {
         if let font = NSFont(name: "Menlo", size: fontSize) ?? NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular) as NSFont? {
             termView.font = font
         }
+
+        // Cap SwiftTerm's scrollback — its Buffer.reflow() runs on every
+        // scrollback line synchronously when cols change. tmux already keeps
+        // its own scrollback, so SwiftTerm's is largely redundant here.
+        termView.getTerminal().changeScrollback(2000)
 
         context.coordinator.termView = termView
         termView.processDelegate = context.coordinator

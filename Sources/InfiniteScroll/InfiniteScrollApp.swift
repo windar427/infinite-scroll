@@ -9,9 +9,15 @@ struct InfiniteScrollApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
-                .frame(minWidth: 1200, minHeight: 600)
+                .frame(
+                    minWidth: 600,
+                    maxWidth: .infinity,
+                    minHeight: 400,
+                    maxHeight: .infinity
+                )
         }
         .windowStyle(.titleBar)
+        .windowResizability(.contentMinSize)
         .defaultSize(width: 1800, height: 900)
         .commands {
             // Cmd+W: close current cell

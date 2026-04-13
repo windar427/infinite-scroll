@@ -9,7 +9,7 @@ A terminal workspace manager for macOS. Organize multiple terminals in an infini
 - Keyboard-driven navigation (`Cmd+Arrows`)
 - Tmux-backed session persistence
 - Inline markdown notes per row
-- Excalidraw whiteboard cells (`Cmd+Shift+E`)
+- Excalidraw whiteboard cells (`Cmd+Shift+E`, offline — React + Excalidraw UMD vendored in `Sources/InfiniteScroll/Resources/Excalidraw/`)
 - Resizable cell dividers (drag to adjust width)
 - Auto-saved workspace state
 
