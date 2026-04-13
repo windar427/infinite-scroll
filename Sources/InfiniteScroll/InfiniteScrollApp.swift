@@ -28,6 +28,12 @@ struct InfiniteScrollApp: App {
                 }
                 .keyboardShortcut("d", modifiers: .command)
 
+                // Cmd+Shift+E: new excalidraw cell
+                Button("New Excalidraw Cell") {
+                    store.addExcalidrawCell()
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+
                 // Cmd+Shift+Down: new row below
                 Button("New Row Below") {
                     store.addPanel()
